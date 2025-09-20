@@ -3,6 +3,7 @@ from .models import Solution , Step
 from .serializer import SolutionSerializer , StepSerializer , SolutionCreateSerializer
 from django.conf import settings
 import os
+import json
 
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,13 +11,14 @@ from rest_framework.decorators import api_view
 
 from openai import OpenAI
 
-api_path = os.path.join(settings.BASE_DIR,"verification", "prompts", "api_key.txt")
-api = open(api_path).read()
-client = OpenAI(api_key=api)
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 @api_view(['POST'])
 def create_solution(request:Request):
+    api_path = os.path.join(settings.BASE_DIR,"verification", "prompts", "api_key.txt")
+    api = open(api_path).read()
+    client = OpenAI(api_key=api)
     # check if solution already exists. for handeling errors. (check account when created)
     serializer = SolutionCreateSerializer(data=request.data)
     if serializer.is_valid():
@@ -50,6 +52,8 @@ def create_solution(request:Request):
                 ],
                 temperature=1
                 ).choices[0].message.content
+            # print("\n\n\n" ,response[7:-3],"\n\n\n")
+            response = json.loads(response[7:-3])
                 
             step.is_valid = response["is_valid"]
             step.confidence_score = response["confidence_score"]
